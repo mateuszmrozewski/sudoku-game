@@ -1,0 +1,32 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Sudoku Game</title>
+    <link rel="stylesheet" href="style.css">
+</head>
+<body>
+    <div class="container">
+        <h1>Sudoku</h1>
+
+        <div class="difficulty-buttons">
+            <button id="easy-btn" class="difficulty-btn">Easy</button>
+            <button id="medium-btn" class="difficulty-btn">Medium</button>
+            <button id="hard-btn" class="difficulty-btn">Hard</button>
+        </div>
+
+        <div id="sudoku-grid" class="sudoku-grid"></div>
+
+        <div class="controls">
+            <button id="pencil-btn" class="control-btn" title="Pencil Mode">✏️</button>
+            <button id="undo-btn" class="control-btn" title="Undo">↶</button>
+            <button id="redo-btn" class="control-btn" title="Redo">↷</button>
+        </div>
+
+        <div id="number-selector" class="number-selector"></div>
+    </div>
+
+    <script src="script.js"></script>
+</body>
+</html>
