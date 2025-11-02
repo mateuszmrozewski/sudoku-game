@@ -33,7 +33,7 @@ A clean, responsive Sudoku game built with HTML, CSS, and vanilla JavaScript.
 
 ## Live Demo
 
-[Play Sudoku](https://yourusername.github.io/sudoku-game)
+[Play Sudoku](https://mateuszmrozewski.github.io/sudoku-game)
 
 ## Local Development
 
