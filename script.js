@@ -1,151 +1,18 @@
-// Puzzle generation functions
-function isValidPlacement(grid, row, col, num) {
-    // Check row
-    for (let x = 0; x < 9; x++) {
-        if (grid[row][x] === num) return false;
+// Get a random puzzle from pregenerated puzzles
+function getRandomPuzzle(difficulty) {
+    let puzzles;
+
+    if (difficulty === 'easy') {
+        puzzles = EASY_PUZZLES;
+    } else if (difficulty === 'medium') {
+        puzzles = MEDIUM_PUZZLES;
+    } else {
+        puzzles = HARD_PUZZLES;
     }
 
-    // Check column
-    for (let x = 0; x < 9; x++) {
-        if (grid[x][col] === num) return false;
-    }
-
-    // Check 3x3 box
-    const boxRow = Math.floor(row / 3) * 3;
-    const boxCol = Math.floor(col / 3) * 3;
-    for (let i = 0; i < 3; i++) {
-        for (let j = 0; j < 3; j++) {
-            if (grid[boxRow + i][boxCol + j] === num) return false;
-        }
-    }
-
-    return true;
-}
-
-function solveSudoku(grid) {
-    for (let row = 0; row < 9; row++) {
-        for (let col = 0; col < 9; col++) {
-            if (grid[row][col] === 0) {
-                // Shuffle numbers 1-9 for randomness
-                const numbers = [1, 2, 3, 4, 5, 6, 7, 8, 9];
-                for (let i = numbers.length - 1; i > 0; i--) {
-                    const j = Math.floor(Math.random() * (i + 1));
-                    [numbers[i], numbers[j]] = [numbers[j], numbers[i]];
-                }
-
-                for (let num of numbers) {
-                    if (isValidPlacement(grid, row, col, num)) {
-                        grid[row][col] = num;
-                        if (solveSudoku(grid)) {
-                            return true;
-                        }
-                        grid[row][col] = 0;
-                    }
-                }
-                return false;
-            }
-        }
-    }
-    return true;
-}
-
-// Count solutions (stop at maxCount for efficiency)
-function countSolutions(grid, maxCount = 2) {
-    let count = 0;
-
-    function solve(g) {
-        if (count >= maxCount) return; // Stop early if we found enough solutions
-
-        for (let row = 0; row < 9; row++) {
-            for (let col = 0; col < 9; col++) {
-                if (g[row][col] === 0) {
-                    for (let num = 1; num <= 9; num++) {
-                        if (isValidPlacement(g, row, col, num)) {
-                            g[row][col] = num;
-                            solve(g);
-                            g[row][col] = 0;
-                        }
-                    }
-                    return; // Backtrack
-                }
-            }
-        }
-        // If we get here, we found a complete solution
-        count++;
-    }
-
-    // Work on a copy
-    const gridCopy = grid.map(row => [...row]);
-    solve(gridCopy);
-    return count;
-}
-
-// Check if puzzle has unique solution
-function hasUniqueSolution(grid) {
-    return countSolutions(grid, 2) === 1;
-}
-
-function generatePuzzle(difficulty) {
-    // Create empty grid
-    const grid = Array(9).fill(0).map(() => Array(9).fill(0));
-
-    // Fill diagonal 3x3 boxes first (they are independent)
-    for (let box = 0; box < 9; box += 3) {
-        const numbers = [1, 2, 3, 4, 5, 6, 7, 8, 9];
-        for (let i = numbers.length - 1; i > 0; i--) {
-            const j = Math.floor(Math.random() * (i + 1));
-            [numbers[i], numbers[j]] = [numbers[j], numbers[i]];
-        }
-        let idx = 0;
-        for (let i = 0; i < 3; i++) {
-            for (let j = 0; j < 3; j++) {
-                grid[box + i][box + j] = numbers[idx++];
-            }
-        }
-    }
-
-    // Solve the rest to get a complete valid solution
-    solveSudoku(grid);
-
-    // Remove cells based on difficulty, ensuring unique solution
-    const cellsToRemove = difficulty === 'easy' ? 40 : difficulty === 'medium' ? 50 : 57;
-
-    // Create list of all cell positions
-    const cells = [];
-    for (let i = 0; i < 9; i++) {
-        for (let j = 0; j < 9; j++) {
-            cells.push([i, j]);
-        }
-    }
-
-    // Shuffle cells for random removal order
-    for (let i = cells.length - 1; i > 0; i--) {
-        const j = Math.floor(Math.random() * (i + 1));
-        [cells[i], cells[j]] = [cells[j], cells[i]];
-    }
-
-    // Try to remove cells one by one, ensuring unique solution
-    let removed = 0;
-    for (let [row, col] of cells) {
-        if (removed >= cellsToRemove) break;
-
-        // Save the value
-        const savedValue = grid[row][col];
-
-        // Try removing it
-        grid[row][col] = 0;
-
-        // Check if puzzle still has unique solution
-        if (hasUniqueSolution(grid)) {
-            // Keep it removed
-            removed++;
-        } else {
-            // Put it back - removal would make puzzle non-unique
-            grid[row][col] = savedValue;
-        }
-    }
-
-    return grid;
+    const randomIndex = Math.floor(Math.random() * puzzles.length);
+    // Return a deep copy to avoid modifying the original
+    return puzzles[randomIndex].map(row => [...row]);
 }
 
 // Game state
@@ -177,60 +44,40 @@ function startNewGame(difficulty, buttonElement) {
         }
     }
 
-    // Show loading state
-    buttonElement.classList.add('loading');
-    buttonElement.disabled = true;
+    // Get a random puzzle from pregenerated puzzles (instant - no loading needed)
+    initialPuzzle = getRandomPuzzle(difficulty);
+    currentGrid = JSON.parse(JSON.stringify(initialPuzzle));
 
-    // Disable all difficulty buttons
-    easyBtn.disabled = true;
-    mediumBtn.disabled = true;
-    hardBtn.disabled = true;
+    // Reset game state
+    selectedNumber = null;
+    pencilMode = false;
+    suggestions = {};
+    history = [];
+    redoStack = [];
+    prefilled.clear();
 
-    // Use setTimeout to allow UI to update before heavy computation
-    setTimeout(() => {
-        try {
-            // Generate new puzzle
-            initialPuzzle = generatePuzzle(difficulty);
-            currentGrid = JSON.parse(JSON.stringify(initialPuzzle));
+    // Clear number selection
+    document.querySelectorAll('.number-btn').forEach(btn => {
+        btn.classList.remove('selected');
+    });
 
-            // Reset game state
-            selectedNumber = null;
-            pencilMode = false;
-            suggestions = {};
-            history = [];
-            redoStack = [];
-            prefilled.clear();
+    // Clear pencil mode
+    if (pencilBtn.classList.contains('active')) {
+        pencilBtn.classList.remove('active');
+    }
 
-            // Clear number selection
-            document.querySelectorAll('.number-btn').forEach(btn => {
-                btn.classList.remove('selected');
-            });
-
-            // Clear pencil mode
-            if (pencilBtn.classList.contains('active')) {
-                pencilBtn.classList.remove('active');
+    // Update prefilled cells
+    for (let row = 0; row < 9; row++) {
+        for (let col = 0; col < 9; col++) {
+            if (initialPuzzle[row][col] !== 0) {
+                prefilled.add(`${row}-${col}`);
             }
-
-            // Update prefilled cells
-            for (let row = 0; row < 9; row++) {
-                for (let col = 0; col < 9; col++) {
-                    if (initialPuzzle[row][col] !== 0) {
-                        prefilled.add(`${row}-${col}`);
-                    }
-                }
-            }
-
-            createGrid();
-            updateButtons();
-            updateNumberButtons();
-        } finally {
-            // Hide loading state and re-enable buttons
-            buttonElement.classList.remove('loading');
-            easyBtn.disabled = false;
-            mediumBtn.disabled = false;
-            hardBtn.disabled = false;
         }
-    }, 100);
+    }
+
+    createGrid();
+    updateButtons();
+    updateNumberButtons();
 }
 
 // Initialize the game
@@ -268,6 +115,10 @@ function renderCellContent(cell, row, col) {
             suggestionDiv.className = 'suggestion';
             if (suggestions[cellKey].has(pos)) {
                 suggestionDiv.textContent = pos;
+                // Highlight if it matches selected number
+                if (selectedNumber !== null && pos === selectedNumber) {
+                    suggestionDiv.classList.add('highlighted');
+                }
             }
             suggestionsContainer.appendChild(suggestionDiv);
         }
@@ -333,16 +184,11 @@ function selectNumber(num) {
         }
     });
 
-    // Update highlighting on all cells
+    // Update highlighting on all cells (including suggestions)
     document.querySelectorAll('.cell').forEach(cell => {
         const row = parseInt(cell.dataset.row);
         const col = parseInt(cell.dataset.col);
-        const value = currentGrid[row][col];
-
-        cell.classList.remove('highlighted');
-        if (value !== 0 && value === selectedNumber) {
-            cell.classList.add('highlighted');
-        }
+        renderCellContent(cell, row, col);
     });
 }
 

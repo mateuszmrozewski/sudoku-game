@@ -135,8 +135,13 @@ h1 {
     display: flex;
     align-items: center;
     justify-content: center;
-    font-size: 0.5rem;
+    font-size: 0.6rem;
     color: #666;
+}
+
+.suggestion.highlighted {
+    font-weight: 700;
+    color: #000;
 }
 
 .cell:hover:not(.prefilled) {
@@ -289,7 +294,7 @@ h1 {
     }
 
     .suggestion {
-        font-size: 0.45rem;
+        font-size: 0.54rem;
     }
 
     .number-btn {
@@ -310,7 +315,7 @@ h1 {
     }
 
     .suggestion {
-        font-size: 0.4rem;
+        font-size: 0.48rem;
     }
 
     .number-btn {
